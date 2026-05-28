@@ -22,7 +22,10 @@
   "type": "module",
   "dependencies": {
     "@hono/node-server": "^2.0.4",
+    "@hono/trpc-server": "^0.4.2",
+    "@hono/zod-openapi": "^1.4.0",
     "@neondatabase/serverless": "^1.1.0",
+    "@trpc/server": "^11.17.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.23",
