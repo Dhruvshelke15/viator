@@ -26,7 +26,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Type check API
-        run: pnpm --filter api tsc --noEmit
+        run: pnpm --filter api typecheck
 
       - name: Lint API
         run: pnpm --filter api lint
