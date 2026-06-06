@@ -1,4 +1,5 @@
 import { useRef, useMemo } from "react";
+import type { ReactElement } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Sphere, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -11,7 +12,6 @@ function GlobeMesh({ isDark }: { isDark: boolean }) {
   const sphereColor = isDark ? "#0a1128" : "#e8e7e2";
   const sphereOpacity = isDark ? 0.9 : 0.95;
   const dotOpacity = isDark ? 0.2 : 0.15;
-
   useFrame((_, delta) => {
     if (meshRef.current) {
       meshRef.current.rotation.y += delta * 0.08;
@@ -19,7 +19,7 @@ function GlobeMesh({ isDark }: { isDark: boolean }) {
   });
 
   const gridLines = useMemo(() => {
-    const lines: JSX.Element[] = [];
+    const lines: ReactElement[] = [];
 
     for (let i = 0; i < 12; i++) {
       const angle = (i / 12) * Math.PI * 2;
@@ -172,12 +172,7 @@ function Particles({ isDark }: { isDark: boolean }) {
   return (
     <points>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={count}
-          array={positions}
-          itemSize={3}
-        />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       <pointsMaterial
         size={0.02}
