@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-import { tripService } from "../services/trips.js";
+import { createDb } from "../db/index.js";
+import { createTripService } from "../services/trips.js";
 import {
   createTripSchema,
   updateTripSchema,
@@ -7,15 +8,19 @@ import {
   createItemSchema,
 } from "../validators.js";
 
-export const tripRoutes = new Hono()
+type Env = { Bindings: { DATABASE_URL: string } };
+
+export const tripRoutes = new Hono<Env>()
 
   .get("/", async (c) => {
-    const allTrips = await tripService.list();
+    const service = createTripService(createDb(c.env.DATABASE_URL));
+    const allTrips = await service.list();
     return c.json(allTrips);
   })
 
   .get("/:id", async (c) => {
-    const trip = await tripService.getById(c.req.param("id"));
+    const service = createTripService(createDb(c.env.DATABASE_URL));
+    const trip = await service.getById(c.req.param("id"));
     if (!trip) return c.json({ error: "Trip not found" }, 404);
     return c.json(trip);
   })
@@ -24,7 +29,8 @@ export const tripRoutes = new Hono()
     const body = await c.req.json();
     const parsed = createTripSchema.safeParse(body);
     if (!parsed.success) return c.json({ error: parsed.error.flatten() }, 400);
-    const newTrip = await tripService.create(parsed.data);
+    const service = createTripService(createDb(c.env.DATABASE_URL));
+    const newTrip = await service.create(parsed.data);
     return c.json(newTrip, 201);
   })
 
@@ -32,13 +38,15 @@ export const tripRoutes = new Hono()
     const body = await c.req.json();
     const parsed = updateTripSchema.safeParse(body);
     if (!parsed.success) return c.json({ error: parsed.error.flatten() }, 400);
-    const updated = await tripService.update(c.req.param("id"), parsed.data);
+    const service = createTripService(createDb(c.env.DATABASE_URL));
+    const updated = await service.update(c.req.param("id"), parsed.data);
     if (!updated) return c.json({ error: "Trip not found" }, 404);
     return c.json(updated);
   })
 
   .delete("/:id", async (c) => {
-    const deleted = await tripService.remove(c.req.param("id"));
+    const service = createTripService(createDb(c.env.DATABASE_URL));
+    const deleted = await service.remove(c.req.param("id"));
     if (!deleted) return c.json({ error: "Trip not found" }, 404);
     return c.json({ message: "Trip deleted" });
   })
@@ -47,7 +55,8 @@ export const tripRoutes = new Hono()
     const body = await c.req.json();
     const parsed = createDaySchema.safeParse(body);
     if (!parsed.success) return c.json({ error: parsed.error.flatten() }, 400);
-    const newDay = await tripService.addDay(c.req.param("id"), parsed.data);
+    const service = createTripService(createDb(c.env.DATABASE_URL));
+    const newDay = await service.addDay(c.req.param("id"), parsed.data);
     return c.json(newDay, 201);
   })
 
@@ -55,9 +64,7 @@ export const tripRoutes = new Hono()
     const body = await c.req.json();
     const parsed = createItemSchema.safeParse(body);
     if (!parsed.success) return c.json({ error: parsed.error.flatten() }, 400);
-    const newItem = await tripService.addItem(
-      c.req.param("dayId"),
-      parsed.data,
-    );
+    const service = createTripService(createDb(c.env.DATABASE_URL));
+    const newItem = await service.addItem(c.req.param("dayId"), parsed.data);
     return c.json(newItem, 201);
   });
