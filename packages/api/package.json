@@ -14,14 +14,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^11.5.0",
-      "onFail": "download"
-    }
-  },
   "type": "module",
+  "packageManager": "pnpm@11.5.2",
   "dependencies": {
     "@hono/node-server": "^2.0.4",
     "@hono/trpc-server": "^0.4.2",

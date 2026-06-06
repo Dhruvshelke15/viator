@@ -11,14 +11,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^11.5.0",
-      "onFail": "download"
-    }
-  },
   "type": "module",
+  "packageManager": "pnpm@11.5.2",
   "dependencies": {
     "@tanstack/react-query": "^5.100.14",
     "@trpc/client": "^11.17.0",
