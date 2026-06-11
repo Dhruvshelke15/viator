@@ -2,10 +2,26 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { TripList } from "./pages/TripList.js";
 import { TripDetail } from "./pages/TripDetail.js";
+import { AuthScreen } from "./pages/AuthScreen.js";
 import { ThemeToggle } from "./components/ThemeToggle.js";
+import { useSession, signOut } from "./auth-client.js";
 
 export function App() {
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const { data: session, isPending } = useSession();
+
+  if (isPending) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-mesh" />
+        <div className="w-8 h-8 border-2 border-ember border-t-transparent rounded-full animate-spin relative z-10" />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <AuthScreen />;
+  }
 
   return (
     <div className="min-h-screen relative">
@@ -21,9 +37,15 @@ export function App() {
         </h1>
         <div className="flex items-center gap-4">
           <span className="font-display text-[0.65rem] tracking-[0.2em] uppercase text-text-muted hidden sm:block">
-            Travel Planner
+            {session.user.name}
           </span>
           <ThemeToggle />
+          <button
+            onClick={() => signOut()}
+            className="text-xs text-text-muted hover:text-danger font-display tracking-wider uppercase transition-colors"
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
@@ -37,10 +59,7 @@ export function App() {
               exit={{ opacity: 0, x: -40 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
-              <TripDetail
-                tripId={selectedTripId}
-                onBack={() => setSelectedTripId(null)}
-              />
+              <TripDetail tripId={selectedTripId} onBack={() => setSelectedTripId(null)} />
             </motion.div>
           ) : (
             <motion.div

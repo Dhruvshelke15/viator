@@ -7,30 +7,67 @@ import {
   time,
   timestamp,
   real,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-// Users
-
 export const users = pgTable("users", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
   name: text("name").notNull(),
-  avatarUrl: text("avatar_url"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
+  image: text("image"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const sessions = pgTable("sessions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const accounts = pgTable("accounts", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
+  scope: text("scope"),
+  idToken: text("id_token"),
+  password: text("password"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const verifications = pgTable("verifications", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
   trips: many(trips),
 }));
 
-// Trips
-
 export const trips = pgTable("trips", {
   id: uuid("id").defaultRandom().primaryKey(),
-  ownerId: uuid("owner_id")
+  ownerId: text("owner_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   title: text("title").notNull(),
@@ -40,12 +77,8 @@ export const trips = pgTable("trips", {
   budgetCents: integer("budget_cents"),
   currency: text("currency").default("USD").notNull(),
   coverImageUrl: text("cover_image_url"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const tripsRelations = relations(trips, ({ one, many }) => ({
@@ -55,8 +88,6 @@ export const tripsRelations = relations(trips, ({ one, many }) => ({
   }),
   days: many(itineraryDays),
 }));
-
-// Itinerary Days
 
 export const itineraryDays = pgTable("itinerary_days", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -68,18 +99,13 @@ export const itineraryDays = pgTable("itinerary_days", {
   notes: text("notes"),
 });
 
-export const itineraryDaysRelations = relations(
-  itineraryDays,
-  ({ one, many }) => ({
-    trip: one(trips, {
-      fields: [itineraryDays.tripId],
-      references: [trips.id],
-    }),
-    items: many(itineraryItems),
+export const itineraryDaysRelations = relations(itineraryDays, ({ one, many }) => ({
+  trip: one(trips, {
+    fields: [itineraryDays.tripId],
+    references: [trips.id],
   }),
-);
-
-// Itinerary Items
+  items: many(itineraryItems),
+}));
 
 export const itineraryItems = pgTable("itinerary_items", {
   id: uuid("id").defaultRandom().primaryKey(),

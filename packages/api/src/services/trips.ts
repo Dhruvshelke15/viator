@@ -1,27 +1,20 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { trips, itineraryDays, itineraryItems } from "../db/schema.js";
 import type { Database } from "../db/index.js";
-import type {
-  CreateTrip,
-  UpdateTrip,
-  CreateDay,
-  CreateItem,
-} from "../validators.js";
+import type { CreateTrip, UpdateTrip, CreateDay, CreateItem } from "../validators.js";
 
-const TEMP_USER_ID = "00000000-0000-0000-0000-000000000001";
-
-export function createTripService(db: Database) {
+export function createTripService(db: Database, userId: string) {
   return {
     async list() {
       return db.query.trips.findMany({
-        where: eq(trips.ownerId, TEMP_USER_ID),
+        where: eq(trips.ownerId, userId),
         orderBy: (trips, { desc }) => [desc(trips.createdAt)],
       });
     },
 
     async getById(id: string) {
       return db.query.trips.findFirst({
-        where: eq(trips.id, id),
+        where: and(eq(trips.id, id), eq(trips.ownerId, userId)),
         with: {
           days: {
             orderBy: (days, { asc }) => [asc(days.dayNumber)],
@@ -38,7 +31,7 @@ export function createTripService(db: Database) {
     async create(data: CreateTrip) {
       const [newTrip] = await db
         .insert(trips)
-        .values({ ...data, ownerId: TEMP_USER_ID })
+        .values({ ...data, ownerId: userId })
         .returning();
       return newTrip;
     },
@@ -47,7 +40,7 @@ export function createTripService(db: Database) {
       const [updated] = await db
         .update(trips)
         .set({ ...data, updatedAt: new Date() })
-        .where(eq(trips.id, id))
+        .where(and(eq(trips.id, id), eq(trips.ownerId, userId)))
         .returning();
       return updated;
     },
@@ -55,12 +48,17 @@ export function createTripService(db: Database) {
     async remove(id: string) {
       const [deleted] = await db
         .delete(trips)
-        .where(eq(trips.id, id))
+        .where(and(eq(trips.id, id), eq(trips.ownerId, userId)))
         .returning();
       return deleted;
     },
 
     async addDay(tripId: string, data: CreateDay) {
+      const trip = await db.query.trips.findFirst({
+        where: and(eq(trips.id, tripId), eq(trips.ownerId, userId)),
+      });
+      if (!trip) return null;
+
       const [newDay] = await db
         .insert(itineraryDays)
         .values({ ...data, tripId })
@@ -69,6 +67,12 @@ export function createTripService(db: Database) {
     },
 
     async addItem(dayId: string, data: CreateItem) {
+      const day = await db.query.itineraryDays.findFirst({
+        where: eq(itineraryDays.id, dayId),
+        with: { trip: true },
+      });
+      if (!day || day.trip.ownerId !== userId) return null;
+
       const [newItem] = await db
         .insert(itineraryItems)
         .values({ ...data, dayId })

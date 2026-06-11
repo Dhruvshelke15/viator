@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, publicProcedure } from "./init.js";
+import { router, protectedProcedure } from "./init.js";
 import { createTripService } from "../services/trips.js";
 import {
   createTripSchema,
@@ -10,44 +10,44 @@ import {
 
 export const appRouter = router({
   trips: router({
-    list: publicProcedure.query(({ ctx }) => {
-      return createTripService(ctx.db).list();
+    list: protectedProcedure.query(({ ctx }) => {
+      return createTripService(ctx.db, ctx.userId).list();
     }),
 
-    getById: publicProcedure
+    getById: protectedProcedure
       .input(z.object({ id: z.string().uuid() }))
       .query(({ ctx, input }) => {
-        return createTripService(ctx.db).getById(input.id);
+        return createTripService(ctx.db, ctx.userId).getById(input.id);
       }),
 
-    create: publicProcedure
+    create: protectedProcedure
       .input(createTripSchema)
       .mutation(({ ctx, input }) => {
-        return createTripService(ctx.db).create(input);
+        return createTripService(ctx.db, ctx.userId).create(input);
       }),
 
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({ id: z.string().uuid(), data: updateTripSchema }))
       .mutation(({ ctx, input }) => {
-        return createTripService(ctx.db).update(input.id, input.data);
+        return createTripService(ctx.db, ctx.userId).update(input.id, input.data);
       }),
 
-    remove: publicProcedure
+    remove: protectedProcedure
       .input(z.object({ id: z.string().uuid() }))
       .mutation(({ ctx, input }) => {
-        return createTripService(ctx.db).remove(input.id);
+        return createTripService(ctx.db, ctx.userId).remove(input.id);
       }),
 
-    addDay: publicProcedure
+    addDay: protectedProcedure
       .input(z.object({ tripId: z.string().uuid(), data: createDaySchema }))
       .mutation(({ ctx, input }) => {
-        return createTripService(ctx.db).addDay(input.tripId, input.data);
+        return createTripService(ctx.db, ctx.userId).addDay(input.tripId, input.data);
       }),
 
-    addItem: publicProcedure
+    addItem: protectedProcedure
       .input(z.object({ dayId: z.string().uuid(), data: createItemSchema }))
       .mutation(({ ctx, input }) => {
-        return createTripService(ctx.db).addItem(input.dayId, input.data);
+        return createTripService(ctx.db, ctx.userId).addItem(input.dayId, input.data);
       }),
   }),
 });
